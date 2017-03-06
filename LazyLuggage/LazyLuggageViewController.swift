@@ -20,6 +20,10 @@ struct TransferService {
 
 class LazyLuggageViewController: UIViewController {
     
+    @IBOutlet weak var scanSwifch: UISwitch!
+    @IBOutlet weak var leftSignal: UILabel!
+    @IBOutlet weak var rightSignal: UILabel!
+    
     fileprivate var centralManager : CBCentralManager!
     
     fileprivate var peripherals = [String : NSNumber]()
@@ -96,6 +100,13 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
         }
         guard TransferService.allowedPeripheralNames.contains(name) else {
             return
+        }
+        
+        if name == TransferService.leftPeripheralName {
+            leftSignal.text = "\(RSSI)"
+        }
+        if name == TransferService.rightPeripheralName {
+            rightSignal.text = "\(RSSI)"
         }
         
         peripherals[name] = RSSI
