@@ -13,7 +13,7 @@ struct TransferService {
     
     static let leftPeripheralName = "BT05"
     static let rightPeripheralName = "BT05"
-    static let serviceUUID = CBUUID(string: "0EFF")
+    static let serviceUUID = CBUUID(string: "615c5c66-7928-4804-a281-4a865a67b3cd")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
     
 }
@@ -174,7 +174,15 @@ extension LazyLuggageViewController : CBPeripheralManagerDelegate {
      */
     fileprivate func sendData() {
         
+        guard let data = dataToSend else {
+            return
+        }
         
+        guard let characteristic = transferCharacteristic else {
+            return
+        }
+        
+        peripheralManager.updateValue(data, for: characteristic, onSubscribedCentrals: nil)
         
     }
     
