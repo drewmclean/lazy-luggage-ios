@@ -12,7 +12,7 @@ import CoreBluetooth
 struct TransferService {
     
     static let leftPeripheralName = "BT05"
-    static let rightPeripheralName = "BT05"
+    static let rightPeripheralName = "?"
     static let serviceUUID = CBUUID(string: "615c5c66-7928-4804-a281-4a865a67b3cd")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
     
@@ -32,7 +32,7 @@ class LazyLuggageViewController: UIViewController {
         }
         return nil
     }
-    
+    fileprivate var startedAdverstising : Bool = false
     fileprivate var peripheralManager : CBPeripheralManager!
     fileprivate var transferCharacteristic: CBMutableCharacteristic?
     
@@ -109,7 +109,7 @@ extension LazyLuggageViewController {
     
     func broadcastLuggageRSSIs() {
         
-        guard !peripheralManager.isAdvertising else {
+        guard !startedAdverstising else {
             return
         }
         
@@ -117,11 +117,12 @@ extension LazyLuggageViewController {
             CBAdvertisementDataServiceUUIDsKey : [TransferService.serviceUUID]
         ])
         
+        startedAdverstising = true
+        
     }
     
 }
 extension LazyLuggageViewController : CBPeripheralManagerDelegate {
-    
     
     /** Required protocol method.  A full app should take care of all the possible states,
      *  but we're just waiting for  to know when the CBPeripheralManager is ready
