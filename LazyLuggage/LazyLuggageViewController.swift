@@ -11,8 +11,8 @@ import CoreBluetooth
 
 struct TransferService {
     
-    static let leftPeripheralName = "BT05L"
-    static let rightPeripheralName = "BT05R"
+    static let leftPeripheralName = "BT05"
+    static let rightPeripheralName = "BT05"
     static let serviceUUID = CBUUID(string: "0EFF")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
     
@@ -22,9 +22,16 @@ class LazyLuggageViewController: UIViewController {
     
     fileprivate var centralManager : CBCentralManager!
     
-    fileprivate var leftPeripheral : CBPeripheral?
-    fileprivate var rightPeripheral : CBPeripheral?
-    fileprivate var peripherals : [String : CBPeripheral?] = [String : CBPeripheral?]()
+    fileprivate var peripherals = [String : NSNumber]()
+    fileprivate var dataToSend : Data? {
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: peripherals, options: .prettyPrinted)
+            return jsonData
+        } catch {
+            print(error.localizedDescription)
+        }
+        return nil
+    }
     
     fileprivate var peripheralManager : CBPeripheralManager!
     fileprivate var transferCharacteristic: CBMutableCharacteristic?
@@ -35,6 +42,7 @@ class LazyLuggageViewController: UIViewController {
         // Start up the CBCentralManager
         centralManager = CBCentralManager(delegate: self, queue: nil)
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
+        
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -53,7 +61,7 @@ extension LazyLuggageViewController {
     func scan() {
         
         centralManager.scanForPeripherals(
-            withServices: [TransferService.serviceUUID], options: [
+            withServices: nil, options: [
                 CBCentralManagerScanOptionAllowDuplicatesKey : NSNumber(value: true as Bool)
             ]
         )
@@ -81,6 +89,7 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        print("\(#line) \(#function) \(peripheral.name!) RSSI: \(RSSI)")
         
         guard let name = peripheral.name else {
             return
@@ -89,16 +98,7 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             return
         }
         
-        if name == TransferService.rightPeripheralName {
-            rightPeripheral = peripheral
-        }
-        
-        if name == TransferService.leftPeripheralName {
-            leftPeripheral = peripheral
-        }
-        
-        peripherals[name] = peripheral
-        
+        peripherals[name] = RSSI
         
         broadcastLuggageRSSIs()
     }
@@ -173,11 +173,9 @@ extension LazyLuggageViewController : CBPeripheralManagerDelegate {
     /** Sends the next amount of data to the connected central
      */
     fileprivate func sendData() {
-        peripheralManager?.updateValue(
-            "FUCK YES".data(using: String.Encoding.utf8)!,
-            for: transferCharacteristic!,
-            onSubscribedCentrals: nil
-        )
+        
+        
+        
     }
     
     /** This callback comes in when the PeripheralManager is ready to send the next chunk of data.
