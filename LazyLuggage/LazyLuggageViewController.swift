@@ -24,7 +24,8 @@ class LazyLuggageViewController: UIViewController {
     @IBOutlet weak var rightSignal: UILabel!
     
     fileprivate var centralManager : CBCentralManager!
-    
+    fileprivate var isConnectingToArduino : Bool = false
+    fileprivate var isConnectedToArduino : Bool = false
     fileprivate var peripherals = [String : NSNumber]()
     fileprivate var dataToSend : Data? {
         do {
@@ -99,6 +100,14 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             
         print("\(#line) \(#function) name:\(name) RSSI: \(RSSI)")
         
+        if name == "ARDUINO 101-8412" {
+            
+            if isConnectingToArduino == false && isConnectedToArduino == false {
+                central.connect(peripheral, options: nil)
+            }
+            
+        }
+        
         guard TransferService.allowedPeripheralNames.contains(name) else {
             return
         }
@@ -112,9 +121,22 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
         
         peripherals[name] = RSSI
         
-        broadcastLuggageRSSIs()
+//        broadcastLuggageRSSIs()
     }
     
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        isConnectingToArduino = false
+        isConnectedToArduino = true
+    }
+    
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        isConnectingToArduino = false
+        isConnectedToArduino = false
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        isConnectedToArduino = false
+    }
 }
 
 extension LazyLuggageViewController {
