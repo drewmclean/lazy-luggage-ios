@@ -14,6 +14,8 @@ struct TransferService {
     static let leftPeripheralName = "BT05"
     static let rightPeripheralName = "?"
     static let serviceUUID = CBUUID(string: "615c5c66-7928-4804-a281-4a865a67b3cd")
+    static let arduinoServiceUUID = CBUUID(string: "3E099910-293F-11E4-93BD-AFD0FE6D1DFD")
+    static let arduinoCharacteristicUUID = CBUUID(string: "9df42e94-05b7-11e7-93ae-92361f002671")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
 }
 
@@ -26,6 +28,7 @@ class LazyLuggageViewController: UIViewController {
     fileprivate var centralManager : CBCentralManager!
     fileprivate var isConnectingToArduino : Bool = false
     fileprivate var isConnectedToArduino : Bool = false
+    fileprivate var arduinoPeripheral : CBPeripheral?
     fileprivate var peripherals = [String : NSNumber]()
     fileprivate var dataToSend : Data? {
         do {
@@ -98,14 +101,16 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             return
         }
             
-        print("\(#line) \(#function) name:\(name) RSSI: \(RSSI)")
+//        print("\(#function) name:\(name) RSSI: \(RSSI)")
         
         if name == "ARDUINO 101-8412" {
             
             if isConnectingToArduino == false && isConnectedToArduino == false {
-                central.connect(peripheral, options: nil)
+                isConnectingToArduino = true
+                arduinoPeripheral = peripheral
+                centralManager.connect(arduinoPeripheral!, options: nil)
             }
-            
+            return
         }
         
         guard TransferService.allowedPeripheralNames.contains(name) else {
@@ -127,6 +132,10 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         isConnectingToArduino = false
         isConnectedToArduino = true
+        
+        peripheral.delegate = self
+        
+        peripheral.discoverServices([TransferService.arduinoServiceUUID])
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -137,7 +146,55 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         isConnectedToArduino = false
     }
+    
+    
 }
+
+extension LazyLuggageViewController : CBPeripheralDelegate {
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        guard error == nil else {
+            print("error discovering service: \(error!)")
+            return
+        }
+        
+        peripheral.services?.forEach({ (service : CBService) in
+            print("service: \(service.uuid.uuidString)")
+            
+            peripheral.discoverCharacteristics(nil, for: service)
+        })
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        
+        guard error == nil else {
+            print("error discovering service: \(error!)")
+            return
+        }
+        
+        service.characteristics?.forEach({ (characteristic: CBCharacteristic) in
+            
+            print("Characteristic: \(characteristic)")
+            
+            guard let data = dataToSend else {
+                return
+            }
+            print("write value: \(data)")
+            
+            peripheral.writeValue(data, for: characteristic, type: .withResponse)
+        })
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        guard error == nil else {
+            print("error writing value: \(error!)")
+            return
+        }
+        
+    }
+    
+}
+
 
 extension LazyLuggageViewController {
     
@@ -156,6 +213,34 @@ extension LazyLuggageViewController {
     }
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extension LazyLuggageViewController : CBPeripheralManagerDelegate {
     
     /** Required protocol method.  A full app should take care of all the possible states,
