@@ -195,6 +195,8 @@ extension LazyLuggageViewController : CBPeripheralManagerDelegate {
             return
         }
         
+        print("Sending Data: \(data)")
+        
         peripheralManager.updateValue(data, for: characteristic, onSubscribedCentrals: nil)
         
     }
