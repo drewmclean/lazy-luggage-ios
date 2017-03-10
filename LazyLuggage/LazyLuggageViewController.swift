@@ -223,9 +223,15 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         
         guard let peripheral = arduinoPeripheral else { return }
         guard let characteristic = arduinoCharacteristic else { return }
-        guard let data = dataToSend else { return }
+//        guard let data = dataToSend else { return }
+        let input = -69
+        var value = input
+        let data = withUnsafePointer(to: &value) {
+            Data(bytes: UnsafePointer($0), count: MemoryLayout.size(ofValue: input))
+        }
+        print(data as NSData)
+        print("Attempting to write data: \(data)")
         
-//        print("Attempting to write data: \(peripherals)")
         peripheral.writeValue(data, for: characteristic, type: .withResponse)
     }
 }
