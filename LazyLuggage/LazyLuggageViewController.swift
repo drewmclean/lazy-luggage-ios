@@ -15,7 +15,6 @@ struct TransferService {
     static let rightPeripheralName = "?"
     static let serviceUUID = CBUUID(string: "615c5c66-7928-4804-a281-4a865a67b3cd")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
-    
 }
 
 class LazyLuggageViewController: UIViewController {
@@ -93,11 +92,13 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        print("\(#line) \(#function) \(peripheral.name!) RSSI: \(RSSI)")
         
         guard let name = peripheral.name else {
             return
         }
+            
+        print("\(#line) \(#function) name:\(name) RSSI: \(RSSI)")
+        
         guard TransferService.allowedPeripheralNames.contains(name) else {
             return
         }
