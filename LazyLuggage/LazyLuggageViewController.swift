@@ -190,7 +190,6 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             print("error writing value: \(error!)")
             return
         }
-        
     }
     
 }
