@@ -10,9 +10,14 @@ import Foundation
 
 extension Data {
     
-    static func dataWithValue(value: UInt16) -> Data {
+    static func dataWithUInt16Value(value: UInt16) -> Data {
         var variableValue = value
-        return Data(buffer: UnsafeBufferPointer(start: &variableValue, count: 1))
+        return Data(buffer: UnsafeBufferPointer(start: &variableValue, count: 16))
+    }
+    
+    static func dataWithInt8Value(value: Int8) -> Data {
+        var variableValue = value
+        return Data(buffer: UnsafeBufferPointer(start: &variableValue, count: 8))
     }
     
     func int8Value() -> Int8 {

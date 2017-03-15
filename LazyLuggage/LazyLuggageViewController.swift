@@ -105,7 +105,7 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             return
         }
             
-        print("\(#function) name:\(name) RSSI: \(RSSI)")
+//        print("\(#function) name:\(name) RSSI: \(RSSI)")
         
         if name == "ARDUINO 101-8412" {
             
@@ -183,8 +183,11 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             print("characteristic non-existent for service")
             return
         }
-    
-        arduinoCharacteristic = characteristic
+        
+        if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
+            arduinoCharacteristic = characteristic
+        }
+        peripheral.setNotifyValue(true, for: characteristic)
         
         print("characteristic: \(characteristic.uuid.uuidString)")
         
@@ -221,12 +224,17 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         peripherals.forEach { (key, value) in
             var rssi : UInt16 = value.uint16Value
             
-            if key == TransferService.rightPeripheralName {
-                let bitmask : UInt16 = 0b1000000000000000
-                rssi = rssi | bitmask
-            }
-            print("Writing -> \(key): \(rssi)")
-            peripheral.writeValue(Data.dataWithValue(value: rssi), for: characteristic, type: .withResponse)
+//            if key == TransferService.rightPeripheralName {
+//                let bitmask : UInt16 = 0b1000000000000000
+//                rssi = rssi | bitmask
+//            }
+            
+            
+            let data = Data(bytes: [value.uint8Value])
+            
+            print("Writing -> Name: \(key) RSSI: \(rssi) data: \(data.hashValue) length: \(data.count)")
+            
+            peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
         }
         
     }
