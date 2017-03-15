@@ -222,7 +222,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         guard let characteristic = arduinoCharacteristic else { return }
 
         peripherals.forEach { (key, value) in
-            var rssi : UInt16 = value.uint16Value
+            var rssi : Int8 = value.int8Value
             
 //            if key == TransferService.rightPeripheralName {
 //                let bitmask : UInt16 = 0b1000000000000000
@@ -230,7 +230,10 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
 //            }
             
             
-            let data = Data(bytes: [value.uint8Value])
+            let data = Data(buffer: UnsafeBufferPointer(start: &rssi, count: MemoryLayout<Int8>.size))
+            print(data as NSData)
+            
+//            let data = Data.dataWithInt8Value(value: rssi)
             
             print("Writing -> Name: \(key) RSSI: \(rssi) data: \(data.hashValue) length: \(data.count)")
             
