@@ -14,8 +14,8 @@ struct TransferService {
     static let leftPeripheralName = "BT05"
     static let rightPeripheralName = "?"
     static let serviceUUID = CBUUID(string: "615c5c66-7928-4804-a281-4a865a67b3cd")
-    static let arduinoServiceUUID = CBUUID(string: "3E099910-293F-11E4-93BD-AFD0FE6D1DFD")
-    static let arduinoCharacteristicUUID = CBUUID(string: "3E099911-293F-11E4-93BD-AFD0FE6D1DFD")
+    static let arduinoServiceUUID = CBUUID(string: "9DF4299E-05B7-11E7-93AE-92361F002671")
+    static let arduinoCharacteristicUUID = CBUUID(string: "9DF42E94-05B7-11E7-93AE-92361F002671")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
 }
 
@@ -139,9 +139,7 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
         isConnectedToArduino = true
         
         peripheral.delegate = self
-        peripheral.discoverServices(nil)
-        
-//        peripheral.discoverServices([TransferService.arduinoServiceUUID])
+        peripheral.discoverServices([TransferService.arduinoServiceUUID])
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -153,7 +151,6 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
         isConnectedToArduino = false
     }
     
-    
 }
 
 extension LazyLuggageViewController : CBPeripheralDelegate {
@@ -164,37 +161,34 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             return
         }
         
-        peripheral.services?.forEach({ (service : CBService) in
-            print("service: \(service.uuid.uuidString)")
+        guard let service = peripheral.services?.first else {
+            print("no service in peripheral")
+            return
+        }
+        
+        print("service: \(service.uuid.uuidString)")
             
-//            guard service.uuid.uuidString == TransferService.arduinoServiceUUID.uuidString else {
-//                return
-//            }
-            
-//            arduinoService = service
-//            peripheral.discoverCharacteristics([TransferService.arduinoCharacteristicUUID], for: arduinoService!)
-            peripheral.discoverCharacteristics(nil, for: service)
-        })
+        peripheral.discoverCharacteristics([TransferService.arduinoCharacteristicUUID], for: service)
+
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         
         guard error == nil else {
-            print("error discovering service: \(error!)")
+            print("error discovering characteristic: \(error!)")
             return
         }
         
-        service.characteristics?.forEach({ (characteristic: CBCharacteristic) in
-            
-            print("characteristic: \(characteristic.uuid.uuidString)")
-            
-//            self.arduinoCharacteristic = characteristic
-//            self.arduinoPeripheral?.setNotifyValue(true, for: characteristic)
-            peripheral.discoverDescriptors(for: characteristic)
-            
-//            writeRSSIValuesToArduino()
-        })
+        guard let characteristic = service.characteristics?.first else {
+            print("characteristic non-existent for service")
+            return
+        }
+    
+        arduinoCharacteristic = characteristic
         
+        print("characteristic: \(characteristic.uuid.uuidString)")
+        
+        writeRSSIValuesToArduino()
         
     }
     
@@ -223,16 +217,18 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         
         guard let peripheral = arduinoPeripheral else { return }
         guard let characteristic = arduinoCharacteristic else { return }
-//        guard let data = dataToSend else { return }
-        let input = -69
-        var value = input
-        let data = withUnsafePointer(to: &value) {
-            Data(bytes: UnsafePointer($0), count: MemoryLayout.size(ofValue: input))
+
+        peripherals.forEach { (key, value) in
+            var rssi : UInt16 = value.uint16Value
+            
+            if key == TransferService.rightPeripheralName {
+                let bitmask : UInt16 = 0b1000000000000000
+                rssi = rssi | bitmask
+            }
+            print("Writing -> \(key): \(rssi)")
+            peripheral.writeValue(Data.dataWithValue(value: rssi), for: characteristic, type: .withResponse)
         }
-        print(data as NSData)
-        print("Attempting to write data: \(data)")
         
-        peripheral.writeValue(data, for: characteristic, type: .withResponse)
     }
 }
 
