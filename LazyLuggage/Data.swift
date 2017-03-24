@@ -17,7 +17,7 @@ extension Data {
     
     static func dataWithInt8Value(value: Int8) -> Data {
         var variableValue = value
-        return Data(buffer: UnsafeBufferPointer(start: &variableValue, count: 8))
+        return Data(buffer: UnsafeBufferPointer(start: &variableValue, count:  MemoryLayout<Int8>.size))
     }
     
     func int8Value() -> Int8 {

@@ -101,11 +101,12 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         
+        print("\(#function) name:\(peripheral.name) RSSI: \(RSSI)")
+
         guard let name = peripheral.name else {
             return
         }
             
-//        print("\(#function) name:\(name) RSSI: \(RSSI)")
         
         if name == "ARDUINO 101-8412" {
             
@@ -222,20 +223,18 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         guard let characteristic = arduinoCharacteristic else { return }
 
         peripherals.forEach { (key, value) in
-            var rssi : Int8 = value.int8Value
+            var rssi : Int8!
             
-//            if key == TransferService.rightPeripheralName {
-//                let bitmask : UInt16 = 0b1000000000000000
-//                rssi = rssi | bitmask
-//            }
+            if key == TransferService.rightPeripheralName {
+                rssi = abs(value.int8Value)
+            } else {
+                rssi = value.int8Value
+            }
             
-            let data = Data(buffer: UnsafeBufferPointer(start: &rssi, count: MemoryLayout<Int8>.size))
-            print(data as NSData)
-            
-//            let data = Data.dataWithInt8Value(value: rssi)
+            let data = Data.dataWithInt8Value(value: rssi)
             
             print("Writing -> Name: \(key) RSSI: \(rssi) data: \(data.hashValue) length: \(data.count)")
-            
+
             peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
         }
         
