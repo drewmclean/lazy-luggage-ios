@@ -255,7 +255,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             
             let data = Data.dataWithInt8Value(value: averagedRSSI)
             print("Writing -> Name: \(key) averagedRSSI: \(averagedRSSI!) data: \(data.hashValue) length: \(data.count)")
-            peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
+            peripheral.writeValue(data, for: characteristic, type: .withResponse)
             
         }
         
