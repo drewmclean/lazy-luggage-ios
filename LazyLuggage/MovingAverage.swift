@@ -3,7 +3,7 @@
 //  LazyLuggage
 //
 //  Created by Andrew McLean on 4/2/17.
-//  Copyright © 2017 LacyLuggage. All rights reserved.
+//  Copyright © 2017 LazyLuggage. All rights reserved.
 //
 
 import Foundation
@@ -11,9 +11,9 @@ import Foundation
 class MovingAverage {
     var samples: Array<Double>
     var sampleCount = 0
-    var period = 5
+    var period = 20
     
-    init(period: Int = 5) {
+    init(period: Int = 20) {
         self.period = period
         samples = Array<Double>()
     }
@@ -30,14 +30,17 @@ class MovingAverage {
     
     func addSample(value: Double) -> Double {
         sampleCount += 1
-        let pos = Int(fmodf(Float(sampleCount), Float(period)))
         
-        if pos >= samples.count {
-            samples.append(value)
-        } else {
-            samples[pos] = value
+        samples.append(value)
+        
+        if samples.count > period {
+            samples.remove(at: 0)
         }
         
-        return average
+        let a =  average
+        
+//        print("Actual: \(value) - Average: \(a) - Samples: \(samples)")
+        
+        return a
     }
 }

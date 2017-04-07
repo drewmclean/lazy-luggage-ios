@@ -117,7 +117,7 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             return
         }
         
-        if name == "ARDUINO 101-8412" {
+        if name == "ARDUINO 101-8873" {
             
             if isConnectingToArduino == false && isConnectedToArduino == false {
                 isConnectingToArduino = true
@@ -125,7 +125,6 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
                 centralManager.connect(arduinoPeripheral!, options: nil)
             }
             return
-            
         }
         
         guard TransferService.allowedPeripheralNames.contains(name) else {
@@ -139,9 +138,10 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             rightSignal.text = "\(RSSI)"
         }
         
+        print("Recording \(name) -> \(RSSI)")
         peripherals[name] = RSSI
         
-        beginWrite()
+        writeRSSIValuesToArduino()
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -201,8 +201,8 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         
         print("characteristic: \(characteristic.uuid.uuidString)")
         
+//        beginWrite()
         writeRSSIValuesToArduino()
-        
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
@@ -223,7 +223,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             return
         }
         
-        print("did write value! \(characteristic.service)")
+//        print("did write value! \(characteristic.service)")
     }
     
     func beginWrite() {
@@ -238,10 +238,16 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
     
     func writeRSSIValuesToArduino() {
         
-        guard let peripheral = arduinoPeripheral else { return }
-        guard let characteristic = arduinoCharacteristic else { return }
+        guard let peripheral = arduinoPeripheral else {
+            return
+        }
+        guard let characteristic = arduinoCharacteristic else {
+            return
+        }
 
+//        print("Values stored: \(peripherals)")
         peripherals.forEach { (key, value) in
+//            print("FUCKING VALUE: \(value)")
             var rssi : Int8!
             var averagedRSSI : Int8!
             
