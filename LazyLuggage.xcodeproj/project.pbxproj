@@ -14,6 +14,7 @@
 		57097FD51E6CC4EC000C5EC6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 57097FD31E6CC4EC000C5EC6 /* LaunchScreen.storyboard */; };
 		579B04A31E79A60400941FB3 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 579B04A21E79A60400941FB3 /* Data.swift */; };
 		57B7D8CF1E91CCBA00B947CC /* MovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57B7D8CE1E91CCBA00B947CC /* MovingAverage.swift */; };
+		57DE3D571EA1284B0078DC0B /* HM10Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57DE3D561EA1284B0078DC0B /* HM10Peripheral.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		57097FD61E6CC4EC000C5EC6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		579B04A21E79A60400941FB3 /* Data.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
 		57B7D8CE1E91CCBA00B947CC /* MovingAverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovingAverage.swift; sourceTree = "<group>"; };
+		57DE3D561EA1284B0078DC0B /* HM10Peripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HM10Peripheral.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +68,7 @@
 				57097FD61E6CC4EC000C5EC6 /* Info.plist */,
 				579B04A21E79A60400941FB3 /* Data.swift */,
 				57B7D8CE1E91CCBA00B947CC /* MovingAverage.swift */,
+				57DE3D561EA1284B0078DC0B /* HM10Peripheral.swift */,
 			);
 			path = LazyLuggage;
 			sourceTree = "<group>";
@@ -144,6 +147,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				57097FCD1E6CC4EC000C5EC6 /* LazyLuggageViewController.swift in Sources */,
+				57DE3D571EA1284B0078DC0B /* HM10Peripheral.swift in Sources */,
 				57B7D8CF1E91CCBA00B947CC /* MovingAverage.swift in Sources */,
 				579B04A31E79A60400941FB3 /* Data.swift in Sources */,
 				57097FCB1E6CC4EC000C5EC6 /* AppDelegate.swift in Sources */,

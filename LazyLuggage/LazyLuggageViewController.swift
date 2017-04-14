@@ -21,7 +21,7 @@ struct TransferService {
 
 class LazyLuggageViewController: UIViewController {
     
-    @IBOutlet weak var scanSwifch: UISwitch!
+    @IBOutlet weak var scanSwitch: UISwitch!
     @IBOutlet weak var leftSignal: UILabel!
     @IBOutlet weak var rightSignal: UILabel!
     
@@ -31,9 +31,10 @@ class LazyLuggageViewController: UIViewController {
     fileprivate var arduinoPeripheral : CBPeripheral?
     fileprivate var arduinoService : CBService?
     fileprivate var arduinoCharacteristic : CBCharacteristic?
-    fileprivate let leftMovingAverage = MovingAverage(period: 10)
-    fileprivate let rightMovingAverage = MovingAverage(period: 10)
-    fileprivate var peripherals = [String : NSNumber]()
+    fileprivate var peripherals = [String : HM10Peripheral]()
+    
+    var leftHM10 : HM10Peripheral = HM10Peripheral(name: TransferService.leftPeripheralName, convertToAbsolute: true)
+    var rightHM10 : HM10Peripheral = HM10Peripheral(name: TransferService.rightPeripheralName, convertToAbsolute: false)
     
     fileprivate var writeTimer : Timer?
     
@@ -46,17 +47,12 @@ class LazyLuggageViewController: UIViewController {
         }
         return nil
     }
-//    fileprivate var startedAdverstising : Bool = false
-//    fileprivate var peripheralManager : CBPeripheralManager!
-//    fileprivate var transferCharacteristic: CBMutableCharacteristic?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Start up the CBCentralManager
         centralManager = CBCentralManager(delegate: self, queue: nil)
-//        peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
-        
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -69,7 +65,6 @@ class LazyLuggageViewController: UIViewController {
         super.viewWillDisappear(animated)
         
         centralManager?.stopScan()
-//        peripheralManager?.stopAdvertising()
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
@@ -133,13 +128,15 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
         
         if name == TransferService.leftPeripheralName {
             leftSignal.text = "\(RSSI)"
+            leftHM10.sampleRSSI(rssiValue: RSSI.int8Value)
         }
+        
         if name == TransferService.rightPeripheralName {
             rightSignal.text = "\(RSSI)"
+            rightHM10.sampleRSSI(rssiValue: RSSI.int8Value)
         }
         
         print("Recording \(name) -> \(RSSI)")
-        peripherals[name] = RSSI
         
         writeRSSIValuesToArduino()
     }
@@ -236,7 +233,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         writeTimer?.invalidate()
     }
     
-    func writeRSSIValuesToArduino() {
+    func writeRSSIValueToArduino(sourceHM10 : HM10Peripheral) {
         
         guard let peripheral = arduinoPeripheral else {
             return
@@ -244,26 +241,9 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         guard let characteristic = arduinoCharacteristic else {
             return
         }
-
-//        print("Values stored: \(peripherals)")
-        peripherals.forEach { (key, value) in
-//            print("FUCKING VALUE: \(value)")
-            var rssi : Int8!
-            var averagedRSSI : Int8!
-            
-            if key == TransferService.rightPeripheralName {
-                rssi = abs(value.int8Value)
-                averagedRSSI = Int8(rightMovingAverage.addSample(value: Double(rssi)))
-            } else {
-                rssi = value.int8Value
-                averagedRSSI = Int8(leftMovingAverage.addSample(value: Double(rssi)))
-            }
-            
-            let data = Data.dataWithInt8Value(value: averagedRSSI)
-            print("Writing -> Name: \(key) averagedRSSI: \(averagedRSSI!) data: \(data.hashValue) length: \(data.count)")
-            peripheral.writeValue(data, for: characteristic, type: .withResponse)
-            
-        }
         
+        let data = sourceHM10.rssiData
+        print("Writing -> Name: \(sourceHM10.name) averagedRSSI: \(sourceHM10.movingAverage.average) data: \(data.hashValue) length: \(data.count)")
+        peripheral.writeValue(data, for: characteristic, type: .withResponse)
     }
 }
