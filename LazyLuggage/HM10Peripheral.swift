@@ -12,18 +12,23 @@ import CoreBluetooth
 class HM10Peripheral {
     
     var name : String
-    var convertToAbsolute : Bool
-    var movingAverage : MovingAverage = MovingAverage(period: 10)
+    fileprivate var convertToAbsolute : Bool
+    fileprivate var movingAverage : MovingAverage = MovingAverage(period: 10)
+    
+    var lastSampled : Int8 = 50
+    var average : Int8 {
+        return Int8(movingAverage.average)
+    }
     
     var rssiData : Data {
-        let data = Data.dataWithInt8Value(value: Int8(self.movingAverage.average))
+        let data = Data.dataWithInt8Value(value: average)
         return data
     }
     
-    func sampleRSSI(rssiValue value: Int8) -> Data {
+    func sampleRSSI(rssiValue value: Int8) {
         let rawRSSI : Int8 = convertToAbsolute ? abs(value) : value
-        var _ : Int8 = Int8(movingAverage.addSample(value: Double(rawRSSI)))
-        return rssiData
+        let _ : Int8 = Int8(movingAverage.addSample(value: Double(rawRSSI)))
+        lastSampled = rawRSSI
     }
     
     init(name: String, convertToAbsolute : Bool = false) {

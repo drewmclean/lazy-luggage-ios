@@ -17,11 +17,11 @@ struct TransferService {
     static let arduinoCharacteristicUUID = CBUUID(string: "9DF42E94-05B7-11E7-93AE-92361F002671")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
     static let arduinoSendIntervalMilliseconds = 100
+    
 }
 
 class LazyLuggageViewController: UIViewController {
     
-    @IBOutlet weak var scanSwitch: UISwitch!
     @IBOutlet weak var leftSignal: UILabel!
     @IBOutlet weak var rightSignal: UILabel!
     
@@ -50,9 +50,10 @@ class LazyLuggageViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        title = "Lazy Luggage"
         // Start up the CBCentralManager
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        let q : DispatchQueue = DispatchQueue.global()
+        centralManager = CBCentralManager(delegate: self, queue: q)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -113,7 +114,6 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
         }
         
         if name == "ARDUINO 101-8873" {
-            
             if isConnectingToArduino == false && isConnectedToArduino == false {
                 isConnectingToArduino = true
                 arduinoPeripheral = peripheral
@@ -126,19 +126,57 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             return
         }
         
+        sampleRSSI(forHM10Named: name, withRSSI: RSSI)
+        
+    }
+    
+    func beginWrite() {
+        guard writeTimer == nil else { return }
+
+        let timeInterval : TimeInterval = Double(TransferService.arduinoSendIntervalMilliseconds / 1000)
+        
+        writeTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(LazyLuggageViewController.sendBoth), userInfo: nil, repeats: true)
+    }
+
+    func endWrite() {
+        writeTimer?.invalidate()
+    }
+    
+    func sampleRSSI(forHM10Named name : String, withRSSI RSSI: NSNumber) {
         if name == TransferService.leftPeripheralName {
-            leftSignal.text = "\(RSSI)"
-            leftHM10.sampleRSSI(rssiValue: RSSI.int8Value)
+            sample(RSSI: RSSI.int8Value, hm10: leftHM10)
+        }
+        else if name == TransferService.rightPeripheralName {
+            sample(RSSI: RSSI.int8Value, hm10: rightHM10)
+        }
+    }
+
+    func sample(RSSI : Int8, hm10: HM10Peripheral) {
+        hm10.sampleRSSI(rssiValue: RSSI)
+    }
+    
+    func sendBoth() {
+        send(hm10: leftHM10, label: leftSignal)
+        send(hm10: rightHM10, label: rightSignal)
+    }
+    
+    func send(hm10 : HM10Peripheral, label:UILabel) {
+        let average = hm10.average
+        let raw = hm10.lastSampled
+        let data = hm10.rssiData
+        
+        DispatchQueue.global().async {
+            print("Writing -> Name: \(hm10.name) raw: \(raw) avg: \(average) hashValue: \(data.hashValue)")
+            self.writeRSSIValueToArduino(data: data)
         }
         
-        if name == TransferService.rightPeripheralName {
-            rightSignal.text = "\(RSSI)"
-            rightHM10.sampleRSSI(rssiValue: RSSI.int8Value)
+        DispatchQueue.main.async {
+            self.logRSSI(label: label, raw: raw, average: average)
         }
-        
-        print("Recording \(name) -> \(RSSI)")
-        
-        writeRSSIValuesToArduino()
+    }
+    
+    func logRSSI(label : UILabel, raw : Int8, average : Int8) {
+        label.text = "\(raw)\n\(average)"
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -193,13 +231,11 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         
         if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
             arduinoCharacteristic = characteristic
+            beginWrite()
         }
         peripheral.setNotifyValue(true, for: characteristic)
         
         print("characteristic: \(characteristic.uuid.uuidString)")
-        
-//        beginWrite()
-        writeRSSIValuesToArduino()
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
@@ -223,17 +259,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
 //        print("did write value! \(characteristic.service)")
     }
     
-    func beginWrite() {
-        guard writeTimer == nil else { return }
-        
-        writeTimer = Timer.scheduledTimer(timeInterval: Double(TransferService.arduinoSendIntervalMilliseconds / 1000), target: self, selector: #selector(LazyLuggageViewController.writeRSSIValuesToArduino), userInfo: nil, repeats: true)
-    }
-    
-    func endWrite() {
-        writeTimer?.invalidate()
-    }
-    
-    func writeRSSIValueToArduino(sourceHM10 : HM10Peripheral) {
+    func writeRSSIValueToArduino(data : Data) {
         
         guard let peripheral = arduinoPeripheral else {
             return
@@ -242,8 +268,6 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             return
         }
         
-        let data = sourceHM10.rssiData
-        print("Writing -> Name: \(sourceHM10.name) averagedRSSI: \(sourceHM10.movingAverage.average) data: \(data.hashValue) length: \(data.count)")
         peripheral.writeValue(data, for: characteristic, type: .withResponse)
     }
 }
