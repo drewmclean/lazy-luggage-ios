@@ -13,7 +13,7 @@ class MovingAverage {
     var sampleCount = 0
     var period = 20
     
-    init(period: Int = 20) {
+    init(period: Int) {
         self.period = period
         samples = Array<Double>()
     }
@@ -29,9 +29,15 @@ class MovingAverage {
     }
     
     func addSample(value: Double) -> Double {
+        var toSample = value
+        
+        if toSample == 127 {
+            toSample = samples.last ?? -50
+        }
+        
         sampleCount += 1
         
-        samples.append(value)
+        samples.append(toSample)
         
         if samples.count > period {
             samples.remove(at: 0)

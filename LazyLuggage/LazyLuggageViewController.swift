@@ -240,9 +240,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         
         if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
             arduinoCharacteristic = characteristic
-            beginWrite()
         }
-//        peripheral.setNotifyValue(true, for: characteristic)
         
         print("characteristic: \(characteristic.uuid.uuidString)")
     }
