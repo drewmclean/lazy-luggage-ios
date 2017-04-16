@@ -26,6 +26,7 @@ class HM10Peripheral {
     }
     
     func sampleRSSI(rssiValue value: Int8) {
+        
         let rawRSSI : Int8 = convertToAbsolute ? abs(value) : value
         let _ : Int8 = Int8(movingAverage.addSample(value: Double(rawRSSI)))
         lastSampled = rawRSSI

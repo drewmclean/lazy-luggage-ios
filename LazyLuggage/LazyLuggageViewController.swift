@@ -16,7 +16,7 @@ struct TransferService {
     static let arduinoServiceUUID = CBUUID(string: "9DF4299E-05B7-11E7-93AE-92361F002671")
     static let arduinoCharacteristicUUID = CBUUID(string: "9DF42E94-05B7-11E7-93AE-92361F002671")
     static let allowedPeripheralNames = [TransferService.leftPeripheralName, TransferService.rightPeripheralName]
-    static let arduinoSendIntervalMilliseconds = 100
+    static let arduinoSendIntervalMilliseconds = 500
     
 }
 
@@ -38,6 +38,8 @@ class LazyLuggageViewController: UIViewController {
     
     fileprivate var writeTimer : Timer?
     
+    fileprivate var bluetoothQueue : DispatchQueue = DispatchQueue.global()
+    
     fileprivate var dataToSend : Data? {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: peripherals, options: .prettyPrinted)
@@ -52,8 +54,8 @@ class LazyLuggageViewController: UIViewController {
         super.viewDidLoad()
         title = "Lazy Luggage"
         // Start up the CBCentralManager
-        let q : DispatchQueue = DispatchQueue.global()
-        centralManager = CBCentralManager(delegate: self, queue: q)
+        
+        centralManager = CBCentralManager(delegate: self, queue: bluetoothQueue)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -62,6 +64,7 @@ class LazyLuggageViewController: UIViewController {
         UIApplication.shared.isIdleTimerDisabled = true
         
     }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
@@ -135,7 +138,15 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
 
         let timeInterval : TimeInterval = Double(TransferService.arduinoSendIntervalMilliseconds / 1000)
         
-        writeTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(LazyLuggageViewController.sendBoth), userInfo: nil, repeats: true)
+
+        DispatchQueue.main.async {
+            self.writeTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(LazyLuggageViewController.sendBoth), userInfo: nil, repeats: true)
+        }
+        
+//        writeTimer = Timer(timeInterval: timeInterval, repeats: true, block: { (timer: Timer) in
+//            self.sendBoth()
+//        })
+        
     }
 
     func endWrite() {
@@ -152,6 +163,7 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     }
 
     func sample(RSSI : Int8, hm10: HM10Peripheral) {
+//        print("Sampling from \(hm10.name) RSSI: \(RSSI)")
         hm10.sampleRSSI(rssiValue: RSSI)
     }
     
@@ -161,12 +173,13 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
     }
     
     func send(hm10 : HM10Peripheral, label:UILabel) {
+        
         let average = hm10.average
         let raw = hm10.lastSampled
         let data = hm10.rssiData
         
-        DispatchQueue.global().async {
-            print("Writing -> Name: \(hm10.name) raw: \(raw) avg: \(average) hashValue: \(data.hashValue)")
+        bluetoothQueue.async {
+            print("Writing \(hm10.name) raw: \(raw) avg: \(average) hashValue: \(data.hashValue)")
             self.writeRSSIValueToArduino(data: data)
         }
         
@@ -233,7 +246,7 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             arduinoCharacteristic = characteristic
             beginWrite()
         }
-        peripheral.setNotifyValue(true, for: characteristic)
+//        peripheral.setNotifyValue(true, for: characteristic)
         
         print("characteristic: \(characteristic.uuid.uuidString)")
     }
@@ -246,13 +259,11 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
         }
         
 //        print("descriptors: \(characteristic.descriptors)")
-        
     }
     
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         guard error == nil else {
             print("error writing value: \(error!)")
-            
             return
         }
         
@@ -268,6 +279,6 @@ extension LazyLuggageViewController : CBPeripheralDelegate {
             return
         }
         
-        peripheral.writeValue(data, for: characteristic, type: .withResponse)
+        peripheral.writeValue(data, for: characteristic, type: .withoutResponse)
     }
 }
