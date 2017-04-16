@@ -129,36 +129,32 @@ extension LazyLuggageViewController : CBCentralManagerDelegate {
             return
         }
         
-        sampleRSSI(forHM10Named: name, withRSSI: RSSI)
-        
+        sampleAndSendRSSI(forHM10Named: name, withRSSI: RSSI)
     }
     
-    func beginWrite() {
-        guard writeTimer == nil else { return }
-
-        let timeInterval : TimeInterval = Double(TransferService.arduinoSendIntervalMilliseconds / 1000)
-        
-
-        DispatchQueue.main.async {
-            self.writeTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(LazyLuggageViewController.sendBoth), userInfo: nil, repeats: true)
-        }
-        
-//        writeTimer = Timer(timeInterval: timeInterval, repeats: true, block: { (timer: Timer) in
-//            self.sendBoth()
-//        })
-        
-    }
-
-    func endWrite() {
-        writeTimer?.invalidate()
-    }
+//    func beginWrite() {
+//        guard writeTimer == nil else { return }
+//
+//        let timeInterval : TimeInterval = Double(TransferService.arduinoSendIntervalMilliseconds / 1000)
+//        
+//        DispatchQueue.main.async {
+//            self.writeTimer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(LazyLuggageViewController.sendBoth), userInfo: nil, repeats: true)
+//        }
+//        
+//    }
+//
+//    func endWrite() {
+//        writeTimer?.invalidate()
+//    }
     
-    func sampleRSSI(forHM10Named name : String, withRSSI RSSI: NSNumber) {
+    func sampleAndSendRSSI(forHM10Named name : String, withRSSI RSSI: NSNumber) {
         if name == TransferService.leftPeripheralName {
             sample(RSSI: RSSI.int8Value, hm10: leftHM10)
+            send(hm10: leftHM10, label: leftSignal)
         }
         else if name == TransferService.rightPeripheralName {
             sample(RSSI: RSSI.int8Value, hm10: rightHM10)
+            send(hm10: rightHM10, label: rightSignal)
         }
     }
 
